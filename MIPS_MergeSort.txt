@@ -1,0 +1,213 @@
+# In this project, I store the input into list I and split to A and B then merge repeatedly. C will be the new input every time after the merge.
+# I compare each integers in each lists. Each time the smaller one will be stored in to list C at $s3. At the end I print the value in list C with LoopBeforeP and LoopP.
+# There are explicit instructions at each line to explain what I'm doing.
+
+	.data		
+I:	.space	128
+A:	.space	128
+B:	.space	128
+C:	.space	128
+comma:	.asciiz	","
+list:	.asciiz	"list:"
+
+	.text
+	.globl main
+	
+main:	# Give the input for the total numbers of integers 
+ 	li	$v0, 5 		# read integer  -- $v0 contains integer read
+	syscall			# input the numbers of integers
+	addi	$t0, $v0, 0	# $t0 = $v0 = the numbers of input integers
+	addi	$t1, $t0, 0	# $t1 = $t0 ( used to save the numbers of input integers)
+	la	$s6, I		# $s6= &I
+	addi	$t2, $zero, 0	# $t2=0	
+input:	# Input the integers of the original list I
+	add 	$t3, $t2, $s6	# address of I[0] in $t3
+	li	$v0, 5 		# read integer  -- $v0 contains integer read
+	syscall
+	sw	$v0, 0($t3)	# Store the first input integer to I[0]
+	addi	$t2, $t2, 4	# I[t2+1], move to next integer in list I			
+	addi	$t0, $t0, -1	# judge how many integers should be store
+	bne	$t0, 0, input	# if there still have input, keep storing into list I
+	
+	addi	$t7, $t1, 0	# $t7 = $t1 ( used to save the numbers)
+	addi	$s7, $t1, 0	# save the value of $t7
+	addi	$s0, $t1, 0	# decide how many loops will be in loadA
+	srl	$t1, $t1, 1	# t1=t1/2, split the list I into list A and B
+	
+	addi	$t2, $zero, 0	# $t2=0	just reset 
+	addi	$t3, $zero, 0	# $t3=0	just reset 
+	j loadA
+Again:	# Do the Merge again
+	addi	$s0, $s0, -1	# To judge how many times the merge executed
+	addi	$t7, $s7, 0	# set t7= the numbers of input integers
+	addi	$t0, $zero, 0	# $t0=0	just reset 
+	addi	$t2, $zero, 0	# $t2=0	just reset 
+	addi	$t4, $zero, 0	# $t4=0	just reset 
+	addi	$t5, $zero, 0	# $t5=0	just reset 
+	addi	$t6, $zero, 0	# $t6=0	just reset 
+	srl	$t1, $t3, 3	# $t3//4 represent the numbers of the value in list C. Therefore, we should split list C again to do the merge -> t1 = t3/8 
+	la	$s6, C		# set list C as the new input
+loadA:	#load value into list A
+	la 	$s1, A		# $s1= &A
+	add 	$t3, $t2, $s1	# address of A[0] in $t3
+	add	$t4, $t6, $s6	# address of I[0] in $t4
+	lw	$t5, 0($t4)	# $t5 = the value in I[0]
+	sw	$t5, 0($t3)	# store word into list A	
+	addi	$t2, $t2, 4	# A[t2+1], move to next integer in list A 
+	addi	$t6, $t6, 4	# I[t6+1], move to next integer in list  I
+	addi	$t1, $t1, -1	# $t1 represent the 1/2 numbers of integers 
+	addi	$t0, $t0, 1	# $t0 plus 1 everytime to calculate how many loops been done 
+	bne	$t1, $0, loadA	# if t1!=0, keep storing integers into list A	
+Reset:	
+	addi	$t2, $zero, 0	# $t2=0	just reset 
+	addi	$t3, $zero, 0	# $t3=0	just reset 
+	addi	$t4, $zero, 0	# $t4=0	just reset 
+	addi	$t5, $zero, 0	# $t5=0	just reset 
+	addi	$t6, $zero, 0	# $t6=0	just reset 
+	addi	$t0, $t0, -1	# prevent premergeA to overfill
+premergeA:#compare the integers in list A
+	add 	$t3, $t2, $s1	# address of A[i=0] in $t3
+	addi	$t5, $t2, 4	# $t5=$t2+4, for the A[i+1]
+	add	$t4, $t5, $s1	# address of A[0+1] in $t4	
+	lw	$t6, 0($t3) 	# t6= A[i]
+	lw	$t9, 0($t4) 	# t9= A[i+1]
+	slt	$t8, $t6, $t9		# if A[i]<A[i+1], $t8 =1, else $t8=0	
+	bne 	$t8, $zero, setA	#if $t8=1, jump to LoopA  ( A{0} will be the first integer in list C)
+	sw	$t9, 0($t3)	#swap
+	sw	$t6, 0($t4)	#swap	
+setA:		
+	addi	$t2, $t2, 4	# go to next set then  compare again
+	addi	$t0, $t0, -1	# determine whether still need to compare
+	addi	$t1, $t1, 1	# $t1 plus 1 everytime to calculate how many loops been done 
+	bne	$t0, $0, premergeA # if t0=0, the comparison is done											
+Reset2:	
+	addi	$t0, $t1, 1	# reset for the purpose of store another half integers into list B
+	addi	$t1, $t2, 4	# t2 used to help store the next word after list A 
+	addi	$t2, $zero, 0	# $t2=0	just reset 
+	addi	$t3, $zero, 0	# $t3=0 	just reset 
+	addi	$t4, $zero, 0	# $t4=0	just reset 
+	addi	$t5, $zero, 0	# $t5=0	just reset 
+	addi	$t6, $zero, 0	# $t6=0	just reset 
+loadB:	#load value into list B
+	la 	$s2, B		# $s2= &B
+	add 	$t3, $t2, $s2	# address of B[0] in $t3
+	add	$t4, $t1, $s6	# address of I[t1/4] in $t4
+	lw	$t5, 0($t4)	#$t5 = the value in I[t1/4]
+	sw	$t5, 0($t3)	# store word into list B	
+	addi	$t2, $t2, 4	#  B[t2+1], move to next integer in list B
+	addi	$t1, $t1, 4	#  move to next integer in list  I	
+	addi	$t0, $t0, -1	# $t0 represent the 1/2 numbers of integers
+	bne	$t0, $0, loadB	# if t1!=0, keep storing integers into list B	
+Reset3:	
+	addi	$t2, $zero, 0	# $t2=0	just reset 
+	addi	$t3, $zero, 0	# $t3=0	just reset 
+	addi	$t4, $zero, 0	# $t4=0	just reset 
+	addi	$t5, $zero, 0	# $t5=0	just reset 
+	addi	$t6, $zero, 0	# $t6=0	just reset 
+	srl	$t0, $t7, 1	# $t0 represent the numbers of integers in list B
+	addi	$t0, $t0, -1	# prevent premergeB to overfill
+premergeB:#compare the integers in list B
+	add 	$t3, $t2, $s2	# address of B[i=0] in $t3
+	addi	$t5, $t2, 4	# $t5=$t2+4, for the B[i+1]
+	add	$t4, $t5, $s2	# address of B[0+1] in $t4	
+	lw	$t6, 0($t3) 	# t6= B[i]
+	lw	$t9, 0($t4) 	# t6= B[i+1]
+	slt	$t8, $t6, $t9		# if B[0]<B[1], $t8 =1, else $t8=0	
+	bne 	$t8, $zero, setB	#if $t8=1, jump to setB  
+	sw	$t9, 0($t3)	#swap
+	sw	$t6, 0($t4)	#swap	
+setB:	
+	addi	$t2, $t2, 4	# go to next set then  compare again
+	addi	$t0, $t0, -1	# determine whether still need to compare
+	bne	$t0, $0, premergeB	# if t0=0, the comparison is done																										
+Reset4:	
+	addi	$t0, $zero, 0	# $t0=0	just reset 
+	addi	$t4, $zero, 0	# $t4=0	just reset 
+	addi	$t5, $zero, 0	# $t5=0	just reset 	
+	addi	$t6, $zero, 0	# $t6=0	just reset 	
+merge:	#Do the merge function in Project2
+	la 	$s3, C			# $s3= &C		
+	sll	$t7, $t7, 1		# $t7= $t7 *2, used to judge how mant elements in list A and B
+	add	$s4, $zero, $t7		#When there are x integers in list A ( the immdiate value would be x*4bytes, each word is 4bytes) - I use this to judge if there still have any words in list A
+	add	$s5, $zero, $t7		# When there are x integers in list B ( the immdiate value would be x*4bytes, each word is 4bytes) - I use this to judge if there still have any words in list B
+	addi 	$t1, $zero, 0		# Used to judge A[]
+	addi 	$t2, $zero, 0		# Used to judge B[]
+	addi 	$t3, $zero, 0		# Used to judge C[]
+	add 	$t9, $t3, $s3		# address of C[0] in $t9
+	addi 	$t0, $zero, 0		# Used to print C[] in the end	
+# I judge which first integer in list A or B is smaller, and put the smaller one as the first integer in list C.
+	add 	$t4, $t1, $s1		# address of A[0] in $t4
+	lw	$t5, 0($t4) 		# $t5= the value of A[0]		
+	add 	$t6, $t2, $s2		# address of B[0] in $t6
+	lw	$t7, 0($t6) 		# $t7= the value of B[0]			
+	slt	$t8, $t5, $t7		# if A[0]<B[0], $t8 =1, else $t8=0	
+	bne 	$t8, $zero, LoopA	#if $t8=1, jump to LoopA  ( A{0} will be the first integer in list C)
+	j LoopB				#if B[0]<A[0], jump to LoopB and store C[0] as B[0]
+LoopA: # Store the integer in list A into list C then read the next integer in list A
+	sw	$t5, 0($t9) 		# store the integer in list A into list C
+	addi	$t3, $t3, 4		# C[t3+1], move to next space in list C ( For example, C[0] to C[1]) for the purpose of storing next integer into list C
+	add 	$t9, $t3, $s3		# address of C[t3+1] in $t9	
+	addi	$t1, $t1, 4		# A[t1+1], move to next integer in list A
+	add 	$t4, $t1, $s1		# address of A[t1] in $t4
+	lw	$t5, 0($t4) 		# $t5= the value of A[t1]	
+	beq	$t1, $s4, LoopSRB	#When there are x integers in list A ( $s4 would be x*4bytes, each word is 4bytes) - I use this to judge if there still have any words in list A
+LoopC: #Loop Compare. Compare which integer in list A or list B is smaller. 	
+	slt	$t8, $t5, $t7		# if A[t1]<B[t2], $t8 =1, else $t8=0	
+	bne 	$t8, $zero, LoopA	#if $t8=1, jump to LoopA  ( A{} will be the first integer in list C)
+LoopB: # Store the integer in list B into list C then read the next integer in list B
+	sw	$t7, 0($t9) 		# store the integer in list B into list C
+	addi	$t3, $t3, 4		# C[t3+1], move to next space in list C ( For example, C[0] to C[1]) for the purpose of storing next integer into list C
+	add 	$t9, $t3, $s3		# address of C[t3+1] in $t9
+	addi	$t2, $t2, 4		# B[t2+1], move to next integer in list B
+	add 	$t6, $t2, $s2		# address of B[t2] in $t6
+	lw	$t7, 0($t6) 		# $t7= the value of B[t2]
+	beq	$t2, $s5, LoopSRA	#When there are x integers in list B ( $s5 would be x*4bytes, each word is 4bytes) - I use this to judge if there still have any words in list B
+	j LoopC
+LoopSRB: # Loop Store Remaining B. Whenever the program go to this Loop, it means there are still integers in list B haven't stored into list C
+	sw	$t7, 0($t9) 		# store the integer in list B into list C
+	addi	$t2, $t2, 4		# B[t2+1]
+	add 	$t6, $t2, $s2		# address of B[t2] in $t6
+	lw	$t7, 0($t6) 		# $t7= the value of B[t2]	
+	addi	$t3, $t3, 4		#C[t3+1], move to next space in list C ( For example, C[0] to C[1]) for the purpose of storing next integer into list C
+	add 	$t9, $t3, $s3		# address of C[t3+1] in $t9
+	beq	$t2, $s5, SortAgain	# If all the integer in list B is stored, go to LoopBeforePrint
+	j LoopSRB
+LoopSRA: # Loop Store Remaining A. Whenever the program go to this Loop, it means there are still integers in list A haven't stored into list C
+	sw	$t5, 0($t9) 		# store the integer in list A into list C
+	addi	$t1, $t1, 4		# A[t1+1]
+	add 	$t4, $t1, $s1		# address of A[t1] in $t4
+	lw	$t5, 0($t4) 		# $t5= the value of A[t1]	
+	addi	$t3, $t3, 4		# C[t3+1], move to next space in list C ( For example, C[0] to C[1]) for the purpose of storing next integer into list C
+	add 	$t9, $t3, $s3		# address of C[t3+1] in $t9
+	beq	$t1, $s4, SortAgain	# If all the integer in list B is stored, go to LoopBeforePrint
+	j LoopSRA	
+SortAgain:
+	bne	$s0, $0, Again		# To judge how many times the merge executed
+	li	$v0, 4			# print string
+	la 	$a0, list 		# print "list: "
+	syscall
+#Because I need more registers so as to print the result, so I  reset $t1 and $t2. Because the output need comma between each words but don't have to print comma after the last word, so I also print the first word in this Loop.
+	addi 	$t1, $zero, 0		# Reset for the purpose of printing C[]
+	addi 	$t2, $zero, 0		# Reset for the purpose of printing C[]
+	add	$t1, $t2, $s3		# address of C[t2] in $t1
+	lw	$t0, 0($t1)		# $t0= C[t2]  ( Print C[0] )
+	li 	$v0, 1			# print integer ($a0= the integer to print)
+	add	$a0, $t0, $0		# $a0=$t0
+	syscall
+	addi	$t2, $t2, 4		# Prepare for reading the next word in list C
+LoopP: # Loop Print. Print the comma first then print the value from from C[1] to C[t3/4]
+	li	$v0, 4			# print string
+	la 	$a0, comma 		# print ", "
+	syscall
+	add	$t1, $t2, $s3		# address of C[t2] in $t1
+	lw	$t0, 0($t1)		# $t0= C[t2]  (Start printing from C[1] to C[t3/4])	
+	li 	$v0, 1			# print integer ($a0= the integer to print)
+	add	$a0, $t0, $0		# $a0=$t0  ($t0 is the interger in list C)
+	syscall
+	addi	$t2, $t2, 4		# Prepare for reading the next word in list C
+	bne 	$t2, $t3, LoopP		# Used to judge whether all the words are printed. $t3/4 represent the numbers of integers(each words is 4bytes) in list C, so $t2 have to addi 4 each time.	
+	
+	li	$v0, 10			# exit (terminate execution)
+	syscall	
+	
+		
