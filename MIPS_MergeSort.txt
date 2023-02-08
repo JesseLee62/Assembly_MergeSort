@@ -125,7 +125,7 @@ Reset4:
 	addi	$t4, $zero, 0	# $t4=0	just reset 
 	addi	$t5, $zero, 0	# $t5=0	just reset 	
 	addi	$t6, $zero, 0	# $t6=0	just reset 	
-merge:	#Do the merge function in Project2
+merge:	#Do the merge function 
 	la 	$s3, C			# $s3= &C		
 	sll	$t7, $t7, 1		# $t7= $t7 *2, used to judge how mant elements in list A and B
 	add	$s4, $zero, $t7		#When there are x integers in list A ( the immdiate value would be x*4bytes, each word is 4bytes) - I use this to judge if there still have any words in list A
